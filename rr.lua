@@ -1,11 +1,17 @@
 --// 🎃 MM2 Halloween AutoFarm 💰 [OPTIMIZED]
 --// Works on XENO
+--// (ИСПРАВЛЕНА ЛОГИКА AFK FARM MODE)
+--// (ИСПРАВЛЕНА ЛОГИКА СБОРА МОНЕТ ЧЕРЕЗ HRP)
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local VirtualUser = game:GetService("VirtualUser")
+
+-- // НОВЫЕ ПЕРЕМЕННЫЕ
+local rootJoint = nil
+local originalRootC0 = nil
 
 local function getChar()
     local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
@@ -26,8 +32,8 @@ screenGui.ResetOnSpawn = false
 screenGui.Parent = parentGui
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 320, 0, 240)
-frame.Position = UDim2.new(0.5, -160, 0.3, 0)
+frame.Size = UDim2.new(0, 320, 0, 320)
+frame.Position = UDim2.new(0.5, -160, 0.2, 0)
 frame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 frame.BorderSizePixel = 0
 frame.Active = true
@@ -63,13 +69,13 @@ titleMask.BorderSizePixel = 0
 local title = Instance.new("TextLabel", titleBar)
 title.Size = UDim2.new(1, 0, 1, 0)
 title.BackgroundTransparency = 1
-title.Text = " MM2 AutoFarm"
+title.Text = "MM2 AutoFarm"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 18
 
 local autoBtn = Instance.new("TextButton", frame)
-autoBtn.Text = " Start AutoFarm"
+autoBtn.Text = "Start AutoFarm"
 autoBtn.Size = UDim2.new(0, 140, 0, 36)
 autoBtn.Position = UDim2.new(0, 15, 0, 55)
 autoBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 80)
@@ -79,7 +85,7 @@ autoBtn.TextSize = 14
 Instance.new("UICorner", autoBtn).CornerRadius = UDim.new(0, 8)
 
 local afkBtn = Instance.new("TextButton", frame)
-afkBtn.Text = " Anti-AFK"
+afkBtn.Text = "💤 Anti-AFK"
 afkBtn.Size = UDim2.new(0, 140, 0, 36)
 afkBtn.Position = UDim2.new(0, 165, 0, 55)
 afkBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
@@ -88,29 +94,81 @@ afkBtn.Font = Enum.Font.GothamBold
 afkBtn.TextSize = 14
 Instance.new("UICorner", afkBtn).CornerRadius = UDim.new(0, 8)
 
+local afkModeBtn = Instance.new("TextButton", frame)
+afkModeBtn.Text = "AFK Mode Farm"
+afkModeBtn.Size = UDim2.new(0, 290, 0, 32)
+afkModeBtn.Position = UDim2.new(0, 15, 0, 100)
+afkModeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+afkModeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+afkModeBtn.Font = Enum.Font.GothamBold
+afkModeBtn.TextSize = 14
+Instance.new("UICorner", afkModeBtn).CornerRadius = UDim.new(0, 8)
+
 local espBtn = Instance.new("TextButton", frame)
-espBtn.Text = " Coin ESP"
-espBtn.Size = UDim2.new(0, 290, 0, 36)
-espBtn.Position = UDim2.new(0, 15, 0, 145)
+espBtn.Text = "Coin ESP"
+espBtn.Size = UDim2.new(0, 290, 0, 32)
+espBtn.Position = UDim2.new(0, 15, 0, 140)
 espBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
 espBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 espBtn.Font = Enum.Font.GothamBold
 espBtn.TextSize = 14
 Instance.new("UICorner", espBtn).CornerRadius = UDim.new(0, 8)
 
+local speedLabel = Instance.new("TextLabel", frame)
+speedLabel.Size = UDim2.new(1, -30, 0, 18)
+speedLabel.Position = UDim2.new(0, 15, 0, 180)
+speedLabel.BackgroundTransparency = 1
+speedLabel.TextColor3 = Color3.fromRGB(200, 200, 210)
+speedLabel.Font = Enum.Font.GothamMedium
+speedLabel.TextSize = 12
+speedLabel.TextXAlignment = Enum.TextXAlignment.Left
+speedLabel.Text = "Speed: 30 (Safe: 20, Risk: 35)"
+
+local speedSlider = Instance.new("Frame", frame)
+speedSlider.Size = UDim2.new(0, 190, 0, 6)
+speedSlider.Position = UDim2.new(0, 15, 0, 205)
+speedSlider.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+Instance.new("UICorner", speedSlider).CornerRadius = UDim.new(1, 0)
+
+local speedFill = Instance.new("Frame", speedSlider)
+speedFill.Size = UDim2.new(0.66, 0, 1, 0)
+speedFill.BackgroundColor3 = Color3.fromRGB(100, 200, 255)
+speedFill.BorderSizePixel = 0
+Instance.new("UICorner", speedFill).CornerRadius = UDim.new(1, 0)
+
+local speedDragger = Instance.new("TextButton", speedSlider)
+speedDragger.Size = UDim2.new(0, 16, 0, 16)
+speedDragger.Position = UDim2.new(0.66, -8, 0.5, -8)
+speedDragger.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+speedDragger.Text = ""
+speedDragger.AutoButtonColor = false
+Instance.new("UICorner", speedDragger).CornerRadius = UDim.new(1, 0)
+
+local speedInput = Instance.new("TextBox", frame)
+speedInput.Size = UDim2.new(0, 80, 0, 26)
+speedInput.Position = UDim2.new(0, 225, 0, 195)
+speedInput.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+speedInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+speedInput.Font = Enum.Font.GothamBold
+speedInput.TextSize = 14
+speedInput.Text = "30"
+speedInput.PlaceholderText = "20-35"
+speedInput.ClearTextOnFocus = false
+Instance.new("UICorner", speedInput).CornerRadius = UDim.new(0, 6)
+
 local statsLabel = Instance.new("TextLabel", frame)
 statsLabel.Size = UDim2.new(1, -30, 0, 20)
-statsLabel.Position = UDim2.new(0, 15, 0, 190)
+statsLabel.Position = UDim2.new(0, 15, 0, 235)
 statsLabel.BackgroundTransparency = 1
 statsLabel.TextColor3 = Color3.fromRGB(150, 200, 255)
 statsLabel.Font = Enum.Font.GothamMedium
 statsLabel.TextSize = 13
 statsLabel.TextXAlignment = Enum.TextXAlignment.Left
-statsLabel.Text = " Farm Time: 0d 0m 0s"
+statsLabel.Text = "arm Time: 0d 0m 0s"
 
 local statusLabel = Instance.new("TextLabel", frame)
 statusLabel.Size = UDim2.new(1, -30, 0, 18)
-statusLabel.Position = UDim2.new(0, 15, 1, -28)
+statusLabel.Position = UDim2.new(0, 15, 0, 260)
 statusLabel.BackgroundTransparency = 1
 statusLabel.TextColor3 = Color3.fromRGB(180, 180, 190)
 statusLabel.Font = Enum.Font.Gotham
@@ -123,7 +181,7 @@ toggleBtn.Size = UDim2.new(0, 150, 0, 45)
 toggleBtn.Position = UDim2.new(0.5, -75, 0.05, 0)
 toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 140, 0)
 toggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-toggleBtn.Text = " AutoFarm"
+toggleBtn.Text = "AutoFarm"
 toggleBtn.Font = Enum.Font.GothamBold
 toggleBtn.TextSize = 16
 toggleBtn.Active = true
@@ -143,6 +201,53 @@ end)
 local flySpeed = 30
 local farmStartTime = 0
 local totalFarmTime = 0
+local afkModeEnabled = false
+
+local function updateSpeed(value)
+    flySpeed = math.clamp(math.floor(value), 20, 35)
+    speedInput.Text = tostring(flySpeed)
+    speedLabel.Text = "Speed: " .. flySpeed .. " (Safe: 20, Risk: 35)"
+    local percent = (flySpeed - 20) / 15
+    speedFill.Size = UDim2.new(percent, 0, 1, 0)
+    speedDragger.Position = UDim2.new(percent, -8, 0.5, -8)
+    if flySpeed <= 22 then
+        speedFill.BackgroundColor3 = Color3.fromRGB(100, 255, 100)
+    elseif flySpeed <= 28 then
+        speedFill.BackgroundColor3 = Color3.fromRGB(255, 200, 100)
+    else
+        speedFill.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+    end
+end
+
+local dragging = false
+speedDragger.MouseButton1Down:Connect(function()
+    dragging = true
+end)
+
+game:GetService("UserInputService").InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if dragging then
+        local mouse = LocalPlayer:GetMouse()
+        local relativeX = mouse.X - speedSlider.AbsolutePosition.X
+        local percent = math.clamp(relativeX / speedSlider.AbsoluteSize.X, 0, 1)
+        local value = 20 + (percent * 15)
+        updateSpeed(value)
+    end
+end)
+
+speedInput.FocusLost:Connect(function()
+    local value = tonumber(speedInput.Text)
+    if value then
+        updateSpeed(value)
+    else
+        speedInput.Text = tostring(flySpeed)
+    end
+end)
 
 local coinCache = {}
 local lastFullScan = 0
@@ -186,10 +291,12 @@ local function flyToPart(part)
     if not part or not hrp or not character then return end
     if not part:IsDescendantOf(workspace) then return end
     
-    local targetPos = part.Position - Vector3.new(0, 2, 0)
+    -- // ИЗМЕНЕНИЕ ЗДЕСЬ: HRP летит чуть ниже монеты. Тело уже повернуто через Joint.
+    local targetPos = part.Position - Vector3.new(0, 2.8, 0)
     local distance = (hrp.Position - targetPos).Magnitude
     local time = math.clamp(distance / flySpeed, 0.05, 3)
 
+    -- // ИЗМЕНЕНИЕ ЗДЕСЬ: Убрана ротация из CFrame
     local goal = {CFrame = CFrame.new(targetPos)}
     local tween = TweenService:Create(hrp, TweenInfo.new(time, Enum.EasingStyle.Linear), goal)
     pcall(function()
@@ -253,12 +360,97 @@ end
 
 local farming = false
 local farmTask
+local afkWaitTask
+
+-- // ----- ИСПРАВЛЕННАЯ ЧАСТЬ ----- // --
+
+local function findMapModel()
+    -- Эта функция ищет модель с АТРИБУТОМ "MapID", а не с именем
+    for _, child in ipairs(workspace:GetChildren()) do
+        if child:IsA("Model") and child:GetAttribute("MapID") then
+            return child
+        end
+    end
+    return nil
+end
+
+local function waitForRound()
+    statusLabel.Text = "AFK: Searching for map..."
+    
+    local mapModel = findMapModel()
+    -- Цикл, который ждет появления карты
+    while not mapModel and farming and afkModeEnabled do
+        statusLabel.Text = "AFK: Searching for map..."
+        mapModel = findMapModel()
+        task.wait(1) -- Проверяем каждую секунду
+    end
+    
+    -- Если фарм выключили, пока искали карту, выходим
+    if not farming or not afkModeEnabled then 
+        statusLabel.Text = "AFK: Map search cancelled."
+        return false 
+    end
+    
+    local mapPos = mapModel:IsA("Model") and mapModel:GetPivot().Position or mapModel.Position
+    statusLabel.Text = "AFK: Hovering near map..."
+    
+    enableNoclip()
+    enableAntiGravity()
+    
+    local hoverPos = mapPos + Vector3.new(math.random(-10, 10), 10, math.random(-10, 10))
+    -- // ИЗМЕНЕНИЕ ЗДЕСЬ: Убрана ротация
+    hrp.CFrame = CFrame.new(hoverPos)
+    
+    -- Теперь ищем RoundTimerPart, он тоже может появиться не сразу
+    local roundTimer = workspace:FindFirstChild("RoundTimerPart")
+    while not roundTimer and farming and afkModeEnabled do
+        statusLabel.Text = "AFK: Waiting for RoundTimer..."
+        -- // ИЗМЕНЕНИЕ ЗДЕСЬ: Убрана ротация
+        hrp.CFrame = CFrame.new(hoverPos) -- Продолжаем висеть
+        roundTimer = workspace:FindFirstChild("RoundTimerPart")
+        task.wait(0.5)
+    end
+
+    if not farming or not afkModeEnabled then 
+        statusLabel.Text = "AFK: Timer search cancelled."
+        return false 
+    end
+    
+    -- Ждем, пока атрибут Time не перестанет быть -1 (раунд начался)
+    while farming and afkModeEnabled do
+        local timeAttr = roundTimer:GetAttribute("Time")
+        if timeAttr and timeAttr ~= -1 then
+            statusLabel.Text = "AFK: Round started! Farming..."
+            return true -- Раунд начался!
+        end
+        
+        -- // ИЗМЕНЕНИЕ ЗДЕСЬ: Убрана ротация
+        hrp.CFrame = CFrame.new(hoverPos) -- Поддерживаем позицию
+        task.wait(0.5)
+    end
+    
+    return false -- Фарм был остановлен
+end
+
+-- // ----- КОНЕЦ ИСПРАВЛЕННОЙ ЧАСТИ ----- // --
+
 
 local function startFarm()
     if farming then return end
     farming = true
-    enableNoclip()
     farmStartTime = tick()
+    
+    pcall(function() humanoid.PlatformStand = true end)
+
+    -- // ИЗМЕНЕНИЕ ЗДЕСЬ: Находим Root joint и поворачиваем тело
+    pcall(function()
+        rootJoint = hrp:FindFirstChild("Root") or hrp:FindFirstChild("RootJoint")
+        if rootJoint then
+            originalRootC0 = rootJoint.C0
+            -- Поворачиваем тело на 90 градусов (лицом вниз) и сдвигаем на 1 студ "вниз" (вдоль новой оси Z)
+            rootJoint.C0 = originalRootC0 * CFrame.Angles(math.rad(90), 0, 0) * CFrame.new(0, 0, -10)
+        end
+    end)
     
     task.spawn(function()
         while farming do
@@ -272,6 +464,16 @@ local function startFarm()
     end)
     
     farmTask = task.spawn(function()
+        if afkModeEnabled then
+            local roundReady = waitForRound()
+            if not roundReady or not farming then
+                if farming then stopFarm() end
+                return
+            end
+        end
+        
+        enableNoclip()
+        
         while farming do
             local success = pcall(function()
                 if not hrp or not hrp.Parent or not humanoid or humanoid.Health <= 0 then
@@ -300,7 +502,7 @@ local function startFarm()
                     local closest = visibleCoins[1]
                     flyToPart(closest)
                 else
-                    disableAntiGravity()
+                    enableAntiGravity()
                     statusLabel.Text = "Waiting for coins..."
                     task.wait(0.5)
                 end
@@ -318,6 +520,17 @@ local function stopFarm()
     totalFarmTime = totalFarmTime + (tick() - farmStartTime)
     disableNoclip()
     disableAntiGravity()
+    
+    pcall(function() humanoid.PlatformStand = false end)
+
+    -- // ИЗМЕНЕНИЕ ЗДЕСЬ: Возвращаем C0
+    pcall(function()
+        if rootJoint and originalRootC0 then
+            rootJoint.C0 = originalRootC0
+        end
+        rootJoint = nil
+        originalRootC0 = nil
+    end)
 end
 
 local AntiAFK = false
@@ -399,12 +612,12 @@ end
 autoBtn.MouseButton1Click:Connect(function()
     if farming then
         stopFarm()
-        autoBtn.Text = "Start AutoFarm"
+        autoBtn.Text = "🚀 Start AutoFarm"
         autoBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 80)
         statusLabel.Text = "AutoFarm stopped"
     else
         startFarm()
-        autoBtn.Text = "Stop AutoFarm"
+        autoBtn.Text = "⏸ Stop AutoFarm"
         autoBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
         statusLabel.Text = "AutoFarm active"
     end
@@ -421,6 +634,20 @@ afkBtn.MouseButton1Click:Connect(function()
         afkBtn.Text = "Anti-AFK ON"
         afkBtn.BackgroundColor3 = Color3.fromRGB(80, 120, 200)
         statusLabel.Text = "Anti-AFK active"
+    end
+end)
+
+afkModeBtn.MouseButton1Click:Connect(function()
+    if afkModeEnabled then
+        afkModeEnabled = false
+        afkModeBtn.Text = "AFK Mode Farm"
+        afkModeBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+        statusLabel.Text = "AFK Mode disabled"
+    else
+        afkModeEnabled = true
+        afkModeBtn.Text = "AFK Mode ON"
+        afkModeBtn.BackgroundColor3 = Color3.fromRGB(120, 100, 220)
+        statusLabel.Text = "AFK Mode enabled"
     end
 end)
 
