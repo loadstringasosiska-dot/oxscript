@@ -85,7 +85,7 @@ autoBtn.TextSize = 14
 Instance.new("UICorner", autoBtn).CornerRadius = UDim.new(0, 8)
 
 local afkBtn = Instance.new("TextButton", frame)
-afkBtn.Text = "💤 Anti-AFK"
+afkBtn.Text = " Anti-AFK"
 afkBtn.Size = UDim2.new(0, 140, 0, 36)
 afkBtn.Position = UDim2.new(0, 165, 0, 55)
 afkBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
