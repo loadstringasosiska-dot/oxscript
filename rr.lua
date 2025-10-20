@@ -164,7 +164,7 @@ statsLabel.TextColor3 = Color3.fromRGB(150, 200, 255)
 statsLabel.Font = Enum.Font.GothamMedium
 statsLabel.TextSize = 13
 statsLabel.TextXAlignment = Enum.TextXAlignment.Left
-statsLabel.Text = "arm Time: 0d 0m 0s"
+statsLabel.Text = "Farm Time: 0d 0m 0s"
 
 local statusLabel = Instance.new("TextLabel", frame)
 statusLabel.Size = UDim2.new(1, -30, 0, 18)
@@ -612,12 +612,12 @@ end
 autoBtn.MouseButton1Click:Connect(function()
     if farming then
         stopFarm()
-        autoBtn.Text = "🚀 Start AutoFarm"
+        autoBtn.Text = "Start AutoFarm"
         autoBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 80)
         statusLabel.Text = "AutoFarm stopped"
     else
         startFarm()
-        autoBtn.Text = "⏸ Stop AutoFarm"
+        autoBtn.Text = "Stop AutoFarm"
         autoBtn.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
         statusLabel.Text = "AutoFarm active"
     end
